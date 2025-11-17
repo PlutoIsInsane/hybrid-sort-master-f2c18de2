@@ -117,7 +117,44 @@ export class HybridSortVisualizer {
     }
   }
 
-  sort(array: number[]): SortStep[] {
+  private pureQuickSort(arr: number[], low: number, high: number, sortedIndices: Set<number>) {
+    if (low < high) {
+      const pi = this.partition(arr, low, high, sortedIndices);
+      this.pureQuickSort(arr, low, pi - 1, sortedIndices);
+      this.pureQuickSort(arr, pi + 1, high, sortedIndices);
+    } else if (low === high) {
+      sortedIndices.add(low);
+    }
+  }
+
+  private pureInsertionSort(arr: number[], sortedIndices: Set<number>) {
+    for (let i = 1; i < arr.length; i++) {
+      const key = arr[i];
+      let j = i - 1;
+      
+      this.addStep(arr, [i, j], Array.from(sortedIndices), 'insertion', 
+        `Insertion Sort: Inserting element ${key} into sorted position`);
+      
+      while (j >= 0 && arr[j] > key) {
+        this.comparisons++;
+        this.swaps++;
+        arr[j + 1] = arr[j];
+        j--;
+        
+        this.addStep(arr, [j + 1, j >= 0 ? j : j + 1], Array.from(sortedIndices), 'insertion',
+          `Insertion Sort: Shifting element ${arr[j + 1]} right`);
+      }
+      
+      if (j >= 0) this.comparisons++;
+      arr[j + 1] = key;
+      sortedIndices.add(i);
+      
+      this.addStep(arr, [j + 1], Array.from(sortedIndices), 'insertion',
+        `Insertion Sort: Placed ${key} at position ${j + 1}`);
+    }
+  }
+
+  sort(array: number[], algorithm: 'hybrid' | 'quicksort' | 'insertion' = 'hybrid'): SortStep[] {
     this.steps = [];
     this.comparisons = 0;
     this.swaps = 0;
@@ -125,10 +162,17 @@ export class HybridSortVisualizer {
     const arr = [...array];
     const sortedIndices = new Set<number>();
 
-    this.addStep(arr, [], [], 'quicksort',
-      `Starting Hybrid Sort (QuickSort + Insertion Sort)`);
-
-    this.hybridQuickSort(arr, 0, arr.length - 1, sortedIndices);
+    if (algorithm === 'quicksort') {
+      this.addStep(arr, [], [], 'quicksort', `Starting QuickSort`);
+      this.pureQuickSort(arr, 0, arr.length - 1, sortedIndices);
+    } else if (algorithm === 'insertion') {
+      this.addStep(arr, [], [], 'insertion', `Starting Insertion Sort`);
+      sortedIndices.add(0);
+      this.pureInsertionSort(arr, sortedIndices);
+    } else {
+      this.addStep(arr, [], [], 'quicksort', `Starting Hybrid Sort (QuickSort + Insertion Sort)`);
+      this.hybridQuickSort(arr, 0, arr.length - 1, sortedIndices);
+    }
 
     this.addStep(arr, [], Array.from({ length: arr.length }, (_, i) => i), 'complete',
       `Sorting complete! Comparisons: ${this.comparisons}, Swaps: ${this.swaps}`);

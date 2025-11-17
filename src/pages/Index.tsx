@@ -7,6 +7,7 @@ import { Card } from '@/components/ui/card';
 const Index = () => {
   const [arraySize, setArraySize] = useState(20);
   const [speed, setSpeed] = useState(500);
+  const [algorithm, setAlgorithm] = useState<'hybrid' | 'quicksort' | 'insertion'>('hybrid');
   const [steps, setSteps] = useState<SortStep[]>([]);
   const [currentStep, setCurrentStep] = useState(0);
   const [isPlaying, setIsPlaying] = useState(false);
@@ -15,12 +16,21 @@ const Index = () => {
   const generateNewArray = useCallback(() => {
     const newArray = generateRandomArray(arraySize);
     const sorter = new HybridSortVisualizer();
-    const sortSteps = sorter.sort(newArray);
+    const sortSteps = sorter.sort(newArray, algorithm);
     setSteps(sortSteps);
     setCurrentStep(0);
     setIsPlaying(false);
     setMaxValue(Math.max(...newArray));
-  }, [arraySize]);
+  }, [arraySize, algorithm]);
+
+  const handleCustomArray = useCallback((customArray: number[]) => {
+    const sorter = new HybridSortVisualizer();
+    const sortSteps = sorter.sort(customArray, algorithm);
+    setSteps(sortSteps);
+    setCurrentStep(0);
+    setIsPlaying(false);
+    setMaxValue(Math.max(...customArray));
+  }, [algorithm]);
 
   useEffect(() => {
     generateNewArray();
@@ -71,6 +81,10 @@ const Index = () => {
     setArraySize(value[0]);
   };
 
+  const handleAlgorithmChange = (value: 'hybrid' | 'quicksort' | 'insertion') => {
+    setAlgorithm(value);
+  };
+
   if (steps.length === 0) return null;
 
   return (
@@ -118,13 +132,16 @@ const Index = () => {
             totalSteps={steps.length}
             speed={speed}
             arraySize={arraySize}
+            algorithm={algorithm}
             onPlayPause={handlePlayPause}
             onReset={handleReset}
             onStepBack={handleStepBack}
             onStepForward={handleStepForward}
             onSpeedChange={handleSpeedChange}
             onArraySizeChange={handleArraySizeChange}
+            onAlgorithmChange={handleAlgorithmChange}
             onGenerateNew={generateNewArray}
+            onCustomArray={handleCustomArray}
             comparisons={steps[currentStep].stats.comparisons}
             swaps={steps[currentStep].stats.swaps}
           />
